@@ -6,7 +6,7 @@ class Match:
   def __init__(self):
     self.Map = ""
     self.GameDate = datetime.date()
-    
+
     self.TeamAName = ""
     self.TeamAScore = ""
 
@@ -19,9 +19,19 @@ class Match:
     self.Teams: list[Team] = []
 
   def from_json(self, rootJson: Root):
-
     
+    self.Map = rootJson.jogos.map_name
+    self.GameDate = rootJson.data
+    
+    if rootJson.time_a == 'Time 2T^':
+      self.TeamAName = rootJson.time_a
+      self.TeamBName = rootJson.time_b
 
+      self.TeamAScore = rootJson.jogos.score_a
+      self.TeamBScore = rootJson.jogos.score_b
+    else:
+      self.TeamBName = rootJson.time_b
+      self.TeamAName = rootJson.time_a
 
 
 
@@ -29,3 +39,5 @@ class Match:
 
 
     return self
+  
+Match().FinalScora

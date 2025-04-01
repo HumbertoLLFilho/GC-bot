@@ -1,26 +1,55 @@
 import json, os
-
+from ExternalServices.GCService import GcService
+from domain.Campeonato import Campeonato
 from domain.json.RootJson import Root
+from CrossCutting.GcServiceConfiguration import GcServiceConfiguration
+from domain.partida import Partida
+import pandas as pd
 
-# Pega o json do jogo (feito)
-# Formata o json (feito)
-# passa todos os jogos (feito)
-# pega os detalhes dos jogos
-# Faz os calculos de partidas
-# Salva o excel
+keys_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keys.json")
 
-diretorio = "C:\Users\hleit\Desktop\Pessoal\Dev\Estudos\GC bot\Games"
+with open(keys_file, 'r', encoding='utf-8') as f:
+    keys_data = json.load(f)
+    gc_config = GcServiceConfiguration(**keys_data["GcServiceConfiguration"])
 
-arquivos = os.listdir(diretorio)
+gcService = GcService(gc_config)
 
-for arquivo in arquivos:
-  caminho_completo = os.path.join(diretorio, arquivo)
-  
-  if os.path.isfile(caminho_completo):
-    if arquivo.endswith(".json"):
-      caminho_arquivo = os.path.join(diretorio, arquivo)
+partidas = [
+    23334827,
+    23334727,
+    23334444,
+    23334133,
+    23333620,
+    23332956,
+    23331984
+]
 
-      with open(caminho_arquivo, 'r', encoding='utf-8') as f:
-        root = Root.model_validate_json(f)
+campeonato = Campeonato()
+for partidaId in partidas:
+    root = gcService.detalhes_partida(partidaId)
 
+    partida = Partida().from_json(root)
+    campeonato.adiciona_partida(partida)
+    data = []
 
+for partida in campeonato.partidas:
+  for time in partida.times:
+    for jogador in time.jogadores:
+      data.append({
+        "Mapa": partida.mapa,
+        "Hora": partida.data,
+        "Resultado": partida.resultado,
+        "Time": time.nome,
+        "Jogador": jogador.nome,
+        "Kills": int(jogador.kills),
+        "Mortes": int(jogador.mortes),
+        "Assistências": int(jogador.assistencias),
+        "adr": float(jogador.adr),
+        "kd": float(jogador.kd),
+      })
+
+df = pd.DataFrame(data)
+output_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "partidas.xlsx")
+df.to_excel(output_file, index=False)
+
+print(f"Excel file saved to {output_file}")
